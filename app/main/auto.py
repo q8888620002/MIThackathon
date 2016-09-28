@@ -44,6 +44,7 @@ if __name__ == '__main__':
     ## get the result ##
 
     final_diag = search_symptoms(diagnosis, user_symptom)
+    print(final_diag)
 
     final_diag = api.diagnosis(final_diag)
 
