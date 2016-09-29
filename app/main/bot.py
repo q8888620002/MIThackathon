@@ -90,7 +90,11 @@ class ConvoBot(object):
                 sym = self._symps[self._sym_i]
                 self._state = 'SYMPTOM_SEARCH:SYMPTOM_ANSWER'
                 result = self.med_api.symptom_details(sym['id'])
-                return result.question
+                print result
+                if result.question:
+                    return result.question
+                else:
+                    return "Do you sometimes have {}?".format(result.name.lower())
             
             elif 'SYMPTOM_ANSWER' in self._state:
                 sym = self._symps[self._sym_i]
