@@ -30,8 +30,7 @@ class ConvoBot(object):
     def speak(self, msg):
         '''Respond to message
         '''
-        print msg
-        print self.age
+
         if self.age is None:
             if self._state == "ASKING_AGE":
                 try:
@@ -81,7 +80,6 @@ class ConvoBot(object):
             self._state = "SYMPTOM_SEARCH"
             self._symps = request
             self._sym_i = 0
-            print self._symps
 
         if "SYMPTOM_SEARCH" in self._state:
             if self._sym_i == len(self._symps):
@@ -105,7 +103,6 @@ class ConvoBot(object):
                 return self.speak(msg)
 
         if self._state == 'DIAGNOSIS_END':
-            print self.diagnosis
             final_diagnosis = self.med_api.diagnosis(self.diagnosis)
             condition = final_diagnosis.conditions[0]['name']
             return "You may have {}. Please see a doctor.".format(condition)
