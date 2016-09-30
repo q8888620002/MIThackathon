@@ -1,5 +1,7 @@
-import infermedica_api
+#import infermedica_api
+import mock_infermedica as infermedica_api
 import googlemaps
+import diagnosis
 
 infermedica_api.configure(app_id='9cdabea1', app_key='787e7a0d2819c0c8d814386f8cc91ddf')
 
@@ -30,8 +32,8 @@ class ConvoBot(object):
     def get_nearby_clinics(self, location=None, clinic_type='clinic'):
         if not location:
             location = self.user_location
-        res = gmaps.places_nearby(location=(25.026629, 121.554843), radius=5000, keyword="clinic")
-        names = [x['name'] for x in res['results']]
+        res = self.gmaps.places_nearby(location=(25.026629, 121.554843), radius=5000, keyword="clinic")
+        names = '\n'.join([x['name'].encode('utf-8') for x in res['results']])
         return names 
 
     def ask_init_symptom(self):
@@ -106,7 +108,6 @@ class ConvoBot(object):
                 sym = self._symps[self._sym_i]
                 self._state = 'SYMPTOM_SEARCH:SYMPTOM_ANSWER'
                 result = self.med_api.symptom_details(sym['id'])
-                print result
                 if result.question:
                     return result.question
                 else:
@@ -124,25 +125,41 @@ class ConvoBot(object):
 
         if self._state == 'DIAGNOSIS_END':
             final_diagnosis = self.med_api.diagnosis(self.diagnosis)
-            condition = final_diagnosis.conditions[0]['name']
-            return "You may have {}. Please see a doctor.".format(condition)
+            self.final_diagnosis = final_diagnosis
+            self._state = 'RECOMMEND_CLINIC'
+            return self.speak(msg)
+
+        if self._state == 'RECOMMEND_CLINIC':
+            if not self.user_location:
+                self._state = 'GET_LOCATION'
+                return self.speak(msg)
+
+            condition = self.final_diagnosis.conditions[0]['name']
+
+            specialty = diagnosis.clinics.get(condition)
+            if specialty is None:
+                for k, v in diagnosis.iteritems():
+                    if condition in k.lower():
+                        specialty = v
+                        break
+            self._state = 'FINISHED'
+            return "These clinics may help:" + str(self.get_nearby_clinics(clinic_type=specialty))
 
         if self._state == 'GET_LOCATION':
-            # try to get location from frontend
-            self._state == 'GET_LOCATION:ASKED'
+            # TODO:try to get location from frontend
+            self._state = 'GET_LOCATION:ASKED'
             return self.ask_user_location()
 
         if self._state == 'GET_LOCATION:ASKED':
             msg = msg.strip().strip('(').strip(')').replace(',', ' ')
             lat, lon = msg.split()
             self.user_location = (lat, lon)
+            self._state = 'RECOMMEND_CLINIC'
+            return "OK"
+
+        if self._state == 'FINISHED':
+            return "Thanks for visiting!"
             
         return "UNCAUGHT STATE!! Your message is {} characters long".format(len(msg))
-
-    def get_next_question(self):
-        pass
-
-    def continue_diagnosis(self):
-        pass
 
 medbot = ConvoBot()
