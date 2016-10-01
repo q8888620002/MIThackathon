@@ -1,0 +1,22 @@
+<html>
+    <head>
+        <title>Patients</title>
+    </head>
+    <body>
+        {% for patient in patients %}
+        <p>Name: <a href="{{url_for('main.patient_info', _id=patient._id)}}">{{patient.name}}</a></p>
+        <p>Gender: {{patient.gender}}</p>
+        <p>Age: {{patient.age}}</p>
+        <p>Symptoms</p>
+        {% for c in patient._diagnosis.symptoms %}
+        {% if c.choice_id == 'present' %}
+          {{c.id}}
+        {% endif %}
+        {% endfor %}
+        <p>Possible Condititons:</p>
+        {% for c in patient._diagnosis.conditions %}
+        {{c.name}}
+        {% endfor %}
+        {% endfor %}
+    </body>
+</html>

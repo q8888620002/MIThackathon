@@ -1,0 +1,23 @@
+<html>
+    <head>
+        <title>Patient Info</title>
+    </head>
+    <body>
+        <h1>{{patient.name}}</h1>
+
+        <p>Name: {{patient.name}}</p>
+        <p>Gender: {{patient.gender}}</p>
+        <p>Age: {{patient.age}}</p>
+        <p>Symptoms</p>
+        {% for c in patient._diagnosis.symptoms %}
+        {% if c.choice_id == 'present' %}
+          {{c.id}}
+        {% endif %}
+        {% endfor %}
+        <p>Possible Condititons:</p>
+        {% for c in patient._diagnosis.conditions %}
+        {{c.name}}
+        {% endfor %}
+        <p>{{ chat_log }}</p>
+    </body>
+</html>
