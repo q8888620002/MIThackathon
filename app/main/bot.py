@@ -32,9 +32,11 @@ class ConvoBot(object):
     def get_nearby_clinics(self, location=None, clinic_type='clinic'):
         if not location:
             location = self.user_location
-        res = self.gmaps.places_nearby(location=(25.026629, 121.554843), radius=5000, keyword="clinic")
+        res = self.gmaps.places_nearby(location=self.user_location, radius=500, keyword=clinic_type)
         names = '\n'.join([x['name'].encode('utf-8') for x in res['results']])
+        self._nearby_clinics = res['results']
         return names 
+
 
     def ask_init_symptom(self):
         return "What are your symptoms?"
