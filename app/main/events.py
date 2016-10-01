@@ -1,3 +1,4 @@
+import json
 from flask import session
 from flask_socketio import emit, join_room, leave_room
 
@@ -21,10 +22,13 @@ def text(message):
     The message is sent to all people in the room."""
     
     room = session.get('room')
-    emit('message', {'msg': session.get('name') + ':' + message['msg']}, room=room)
-    emit('status', {'msg': medbot.speak(message['msg'])}, room=room)
-    if message['msg'] == 'map':
-        emit('showmap',{'msg':session.get('name')}, room=room)
+    if medbot._state == 'RECOMMEND_CLINIC':
+        msg = medbot.speak(message['msg'])
+        places = medbot._nearby_clinics
+        emit('showmap', {'msg': msg, 'places': places}, room=room)
+    else:
+        emit('message', {'msg': session.get('name') + ':' + message['msg']}, room=room)
+        emit('status', {'msg': medbot.speak(message['msg'])}, room=room)
 
 
 

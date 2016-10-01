@@ -37,17 +37,26 @@
                     $('#chat').scrollTop($('#chat')[0].scrollHeight);
                 });
                 socket.on('showmap',function(data){
-                      var  initMap= function() {
-                          var position = {lat: 25.026629,lng: 121.554843};
-                          var map = new google.maps.Map(document.getElementById('map'), {
+                    $('#chat').val($('#chat').val() + data.msg + '\n');
+                    $('#chat').scrollTop($('#chat')[0].scrollHeight);
+                    var initMap= function() {
+                        var position = {lat: 25.026629,lng: 121.554843};
+                        var map = new google.maps.Map(document.getElementById('map'), {
                             zoom: 16,
                             center: position
-                          });
-                          var marker = new google.maps.Marker({
-                            position: position,
-                            map: map
-                          });
+                        });
+                        console.log(data.places.length);
+                        for (p of data.places) {
+                           var marker = new google.maps.Marker({
+                               map: map,
+                               title: p.name,
+                               place: {
+                                   placeId: p.place_id,
+                                   location: p.geometry.location,
+                               }
+                           });
                         }
+                    }
                     initMap();
                 });
 
