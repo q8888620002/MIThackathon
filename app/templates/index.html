@@ -1,14 +1,71 @@
 <html>
     <head>
-        <title>Flask-SocketIO-Chat</title>
+        <title>Mr. Pior</title>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+<link rel="stylesheet" href="https://code.getmdl.io/1.2.1/material.indigo-pink.min.css">
+<script defer src="https://code.getmdl.io/1.2.1/material.min.js"></script>
+<style>
+ body{
+    background-color: #FAFAFA;
+     background-image:
+        url("Blue-Robot.png");
+ }
+.card-wide.mdl-card {
+  width: 512px;
+  left:35%;
+  margin-top: 10%; 
+}
+.card-wide > .mdl-card__title {
+  color: #fff;
+  height: 176px;
+  background-color: #3F51B5;
+}
+.card-wide > .mdl-card__menu {
+  color: #fff;
+}
+h1{
+    font: italic;
+    text-align: center;
+}
+#robot{
+  width:212px; 
+  height:160px;
+}
+
+
+</style>
     </head>
     <body>
-        <h1>Flask-SocketIO-Chat</h1>
+    <div class="card-wide mdl-card mdl-shadow--3dp " >
+    <div class="mdl-card__title">
+        <h1>Mr. Pior</h1>
+        <img id="robot" src="{{url_for('static',filename='Blue-Robot.png')}}">
+        </div>
         <form method="POST">
+            <div class="mdl-card__supporting-text">
+            This is med piro, please type in your name 
+            </div>
+            <div style=" padding:1em;">
             {{ form.hidden_tag() }}
-            {{ form.name.label }}: {{ form.name() }} {% for error in form.name.errors %}{{ error }}{% endfor %}<br>
-            {{ form.room.label }}: {{ form.room() }} {% for error in form.room.errors %}{{ error }}{% endfor %}<br>
-            {{ form.submit() }}
+
+            {{ form.name.label }}  <div class="mdl-textfield mdl-js-textfield">: 
+            {{ form.name() }} {% for error in form.name.errors %}{{ error }}{% endfor %}
+            </div><br>
+                
+           
+             <div class="mdl-textfield mdl-js-textfield">
+            {{ form.gender.label }} {{ form.gender }} 
+             </div>
+            <br>
+            <div class="mdl-card__actions mdl-card--border">
+               <div class="mdl-card__actions">
+               {{ form.submit() }}
+                </div>
+          </div>
+           
+            
         </form>
+                </div>
+        </div>
     </body>
 </html>

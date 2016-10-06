@@ -1,5 +1,11 @@
+#-*- coding: utf-8 -*-
+
 #import infermedica_api
-import mock_infermedica as infermedica_api
+import infermedica_api
+from flask import session
+from flask_socketio import emit
+
+
 import googlemaps
 import diagnosis
 
@@ -23,8 +29,12 @@ class ConvoBot(object):
     def _get_state(self):
         pass
 
-    def greet(self):
-        return "Hello!"
+    def set_gender(self,gender):
+        self.gender = gender
+        return "Your gender is <strong>" + gender+"<strong/>"
+
+    def greet(self ):
+        return "Hello! "
 
     def ask_user_location(self):
         return "Where would you like me to start my search for clinics? (e.g. workplace, home)"
@@ -32,24 +42,61 @@ class ConvoBot(object):
     def get_nearby_clinics(self, location=None, clinic_type='clinic'):
         if not location:
             location = self.user_location
-        res = self.gmaps.places_nearby(location=self.user_location, radius=500, keyword=clinic_type)
+        res = self.gmaps.places_nearby(location=self.user_location, radius=5000, keyword=clinic_type)
         names = '\n'.join([x['name'].encode('utf-8') for x in res['results']])
         self._nearby_clinics = res['results']
         return names 
 
 
     def ask_init_symptom(self):
-        return "What are your symptoms?"
-    
+        return "Okay, Now tell me about your symptoms."
+
     def ask_gender(self):
         return "What is your gender?"
     
     def ask_age(self):
-        return "What is your age?"
+        return "How old are you?"
 
-    def speak(self, msg):
+    def ask_clinic(self, place_id):
+        place_info = self.gmaps.place(place_id)['result']
+        key_label = [('name', 'Name'),
+                     ('formatted_address', 'Address'),
+                     ('formatted_phone_number', 'Phone'),
+                     ('website', 'Website')]
+        s = []
+        for k, l in key_label:
+            try:
+                value = place_info[k]
+            except KeyError:
+                continue
+            s.append(u'{label}: {value}'.format(label=l, value=value))   
+        s = u'\n'.join(s)
+        
+        question = u"Would you like to make an appointment at this clinic?\n{}".format(s)
+        return question
+
+
+    def speak(self, msg, state=None):
         '''Respond to message
         '''
+
+        if state is not None:
+            self._state = state
+            return self.speak(msg)
+
+        if self._state == 'SELECTED_CLINIC':
+            self._state = 'ASKING_CLINIC'
+            self._clinic = msg
+            return self.ask_clinic(place_id=msg)
+
+        if self._state == 'ASKING_CLINIC':
+            if msg.lower() in ['y', 'yes', 'yep', 'true']:
+                self._state = 'FINISHED'    
+                return "Appointment made!"
+            else:
+                self._clinic = None
+                self._state = None
+                return ''
 
         if self.age is None:
             if self._state == "ASKING_AGE":
@@ -145,22 +192,28 @@ class ConvoBot(object):
                         specialty = v
                         break
             self._state = 'FINISHED'
-            return "These clinics may help:" + str(self.get_nearby_clinics(clinic_type=specialty))
 
+            clinic_names = str(self.get_nearby_clinics(clinic_type=specialty))
+            places = self._nearby_clinics
+            center = {'lat': self.user_location[0],
+                      'lng': self.user_location[1]}
+            room = session.get('room')
+            emit('showmap', {'center': center, 'places': places}, room=room)
+            return "You probably have "+ condition+". I can refer you to a {} clinic.\n(Clinics shown on the map.)".format(specialty)
+            
         if self._state == 'GET_LOCATION':
-            # TODO:try to get location from frontend
             self._state = 'GET_LOCATION:ASKED'
             return self.ask_user_location()
 
         if self._state == 'GET_LOCATION:ASKED':
             msg = msg.strip().strip('(').strip(')').replace(',', ' ')
-            lat, lon = msg.split()
-            self.user_location = (lat, lon)
+            lat, lng = msg.split()
+            self.user_location = (float(lat), float(lng))
             self._state = 'RECOMMEND_CLINIC'
             return "OK"
 
         if self._state == 'FINISHED':
-            return "Thanks for visiting!"
+            pass
             
         return "UNCAUGHT STATE!! Your message is {} characters long".format(len(msg))
 

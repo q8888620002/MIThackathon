@@ -4,7 +4,7 @@
     <link rel="stylesheet" href="https://code.getmdl.io/1.2.1/material.indigo-pink.min.css">
     <script defer src="https://code.getmdl.io/1.2.1/material.min.js"></script>
     <link href="https://fonts.googleapis.com/css?family=Aldrich|Poiret+One|Russo+One|VT323" rel="stylesheet">
-    <style>
+     <style>
       html, body {
         height: 100%;
         margin: 0;
@@ -18,36 +18,45 @@
         border-style: groove;
         float: right;
       }
-
       #map {
-        height: 85%;
-        width: 800px;
-        float:left;
+        height: 80%;
+        width: auto;
+        
       }
       
       #chat{
-          height: 500px;
+          margin-top:0.5em; 
+          height: 50%;
           overflow-y: scroll;
       }
-      .message{
-          text-indent: 1em;
+      .bot_message{
+          text-indent: 0.5em;
+          background-color: #E8EAF6;
+          margin-bottom:0.5em;
+          padding: 0.5em;
       }
-
+      .pt_message{
+          text-indent: 0.5em;
+          background-color: #EEEEEE;
+          margin-bottom:0.5em;
+          padding: 0.5em;
+      }
       #text{
-        padding: 10px 10px;
-        margin: 2px 0;
+        padding: 5px 5px;
+        margin: 2px 0px;
         box-sizing: border-box;
       }
       #header{
         font-family: 'Poiret One', cursive;
         text-align:center;
-      }
-      
+      }  
+    </style>
     </style>
         <title>Medical Pionner{{ room }}</title>
         <script type="text/javascript" src="//code.jquery.com/jquery-1.4.2.min.js"></script>
         <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/socket.io/1.3.6/socket.io.min.js"></script>
         <script type="text/javascript" charset="utf-8">
+            var taipei_pos = {lat: 25.026629,lng: 121.554843};
             var socket;
             $(document).ready(function(){
                 socket = io.connect('http://' + document.domain + ':' + location.port + '/chat');
@@ -55,34 +64,44 @@
                     socket.emit('joined', {});
                 });
                 socket.on('status', function(data) {
-                    $('#chat').append('<p class= "message">' + data.msg + '</p>\n');
+
+                    $('#chat').append( "Mr' Pior<div class= 'mdl-card__supporting-text bot_message'>"+data.msg+'</div></br>' );
                     $('#chat').scrollTop($('#chat')[0].scrollHeight);
                 });
                 socket.on('message', function(data) {
-                    $('#chat').append('<p class = "message">' + data.msg + '</p>\n');
-                    $('#chat').scrollTop($('#chat')[0].scrollHeight);
+                
                 });
                 socket.on('showmap',function(data){
-                    $('#chat').val($('#chat').val() + data.msg + '\n');
-                    $('#chat').scrollTop($('#chat')[0].scrollHeight);
                     var initMap= function() {
-                        var position = {lat: 25.026629,lng: 121.554843};
                         var map = new google.maps.Map(document.getElementById('map'), {
-                            zoom: 16,
-                            center: position
+                            zoom: 14,
+                            center: data.center,
                         });
-                        console.log(data.places.length);
+
                         for (p of data.places) {
-                           var marker = new google.maps.Marker({
-                               map: map,
-                               title: p.name,
-                               place: {
-                                   placeId: p.place_id,
-                                   location: p.geometry.location,
-                               }
-                           });
+                            var marker = new google.maps.Marker({
+                                map: map,
+                                title: p.name,
+                                position: p.geometry.location,
+                                place: {
+                                    placeId: p.place_id,
+                                    location: p.geometry.location,
+                                }
+                            });
+                            var infowindow = new google.maps.InfoWindow({
+                                content: p.name
+                            });
+                            marker.addListener('click', function(infowindow, place_id) {
+                              return function() {
+                                  map.setZoom(16);
+                                  map.panTo(this.getPosition());
+                                  infowindow.open(map, this);
+                                  socket.emit('marker_select', {'place_id':place_id});
+                              }
+                            }(infowindow, p.place_id));
                         }
                     }
+                     $('#image').hide();
                     initMap();
                 });
           
@@ -91,10 +110,38 @@
                     if (code == 13) {
                         text = $('#text').val();
                         $('#text').val('');
+                         $('#chat').append( 'Me: <div class= "mdl-card__supporting-text pt_message">'+text+'</div></br>' );
+                        $('#chat').scrollTop($('#chat')[0].scrollHeight);
                         socket.emit('text', {msg: text});
+
+                       
                     }
                 });
+
+
+
+                // Try HTML5 geolocation.
+                if (navigator.geolocation) {
+                  navigator.geolocation.getCurrentPosition(function(position) {
+                    var pos = {
+                      lat: position.coords.latitude,
+                      lng: position.coords.longitude
+                    };
+                    socket.emit('geolocation', pos);
+
+                  }, function() {
+                    alert("Geolocation is blocked.");
+                  });
+                } else {
+                    // Browser doesn't support Geolocation
+                    alert("No Geolocation");
+                }
+
+
             });
+
+
+
 
             function leave_room() {
                 socket.emit('left', {}, function() {
@@ -107,23 +154,29 @@
         </script>
             </head>
     <body>
+
         <h1 id ="header">MeD Pior'</h1>
         <div id= "chat_layout" class ="mdl-card mdl-shadow--3dp ">
-
         <div class="mdl-card__supporting-text">
-        <div id="chat" cols="80" rows="20"></div><br><br>
-        <input id="text" size="83"  placeholder="Enter your message here"><br><br>
+       <div id="chat" cols="80" rows="20"></div><br><br>
+          <div class="mdl-textfield mdl-js-textfield">
+        <input class="mdl-textfield__input" id="text" size="83" 
+         placeholder="Enter your message here">
+        </div>
+       
+        </div>
+            <button class="mdl-button mdl-js-button mdl-button--raised mdl-button--colored mdl-js-ripple-effect" onclick="leave_room();">Leave this room
+            </button>
+        </div>
+                 <a id="image"><img src="{{url_for('static',filename='Blue-Robot.png')}}" 
+                 style="width:304px; height:228px; 
 
-        </div>
-        <button class="mdl-button mdl-js-button mdl-button--raised mdl-button--colored mdl-js-ripple-effect" onclick="leave_room();">Leave this room</button>
-<script>
-      
-    </script>
-        </div>
-        <div class="mdl-card__media mdl-shadow--4dp mdl-card--border">
-          <div id="map"></div>
+                 "></a>
+                  <div id="map"></div>
+    
+                
           </div>
-          </div>
+        
     </body>
     <script type="text/javascript"
   src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCO_q7P79_HQmnApoRlhWi_-3cRwzd86A8&libraries=geometry,places">
